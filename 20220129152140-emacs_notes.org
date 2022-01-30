@@ -1,0 +1,85 @@
+:PROPERTIES:
+:ID:       cced4f94-9c6d-42f5-b3b5-1cc43e5fd8b8
+:END:
+#+title: emacs notes
+
+* Manipulating windows
+
+Split current window:
+- Horizontally with ~space w n~
+- Vertically with ~space w v~
+
+Resize window by COUNT:
+
+- Increase height: ~COUNT space w +~
+- Decrease height: ~COUNT space w -~
+- Increase width: ~COUNT space w >~
+- Decrease width: ~COUNT space w <~
+
+* Subscript and superscripts
+[[https://orgmode.org/manual/Subscripts-and-Superscripts.html][Emacs documentation 12.3 Subscripts and Superscripts]]
+
+You can add subscripts and superscripts by typing:
+
+- ~1^{2}~
+- ~1_{2}~
+
+NOTE: The default syntax for this is just ~1^2~ or ~1_2~,
+which may cause formatting issues in day-to-day writing.
+
+I suspect doom emacs switches this default to the much
+clearer ~1^{2}~ and ~1_{2}~ syntax.
+
+You can run ~org-toggle-pretty-entities~ to display rendered subscript/superscript.
+
+However, it /does/ hide formatting errors, especially when
+replacing the sub/superscripted characters. You'll need top
+disable ~org-toggle-pretty-entities~ to find stray
+characters.
+
+* Create a new and isolated org-roam directory
+
+From:
+https://www.orgroam.com/manual.html#How-do-I-have-more-than-one-Org_002droam-directory_003f
+
+You can create a new and isolated org-roam directory by:
+
+1. Creating a new directory.
+2. In the new directory, create a ~.dir-locals.el~ file,
+   containing:
+
+   #+BEGIN_SRC elisp
+   ((nil . ((org-roam-directory . "/path/to/alt/org-roam-dir")
+         (org-roam-db-location . "/path/to/alt/org-roam-dir/org-roam.db"))))
+   #+END_SRC
+
+   Note: Locations must be absolute paths.
+3. Using emacs, navigate to that directory.
+   Emacs should prompt you with the following:
+
+   #+BEGIN_EXAMPLE
+   The local variables list in /Users/zeddee/working/zeddee-repos/
+   contains values that may not be safe (*).
+
+   Do you want to apply it? You can type
+   y  -- to apply the local variables list.
+   n  -- to ignore the local variables list.
+   !  -- to apply the local variables list, and permanently mark these
+         values (*) as safe (in the future, they will be set automatically.)
+   #+END_EXAMPLE
+
+4. Type ~y~ to preview your settings.
+5. Make sure you're in your new org-roam directory using
+   dired (emacs may attempt to restore your previous
+   org-roam session).
+
+   Then try to run ~org-roam-node-find~. emacs should ask
+   you if you want to use settings from .dir-locals.el
+   again.
+
+   If successful, entries from your other org-roam directories
+   should not be visible.
+6. Finally, run ~org-roam-node-find~ again just to invoke
+   org-roam, and when emacs prompts you again, type ~!~
+   to make your .dir-locals.el settings permanent for
+   that directory.
