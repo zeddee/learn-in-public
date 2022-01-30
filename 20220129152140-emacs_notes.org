@@ -38,9 +38,7 @@ disable ~org-toggle-pretty-entities~ to find stray
 characters.
 
 * Create a new and isolated org-roam directory
-
-From:
-https://www.orgroam.com/manual.html#How-do-I-have-more-than-one-Org_002droam-directory_003f
+[[https://www.orgroam.com/manual.html#How-do-I-have-more-than-one-Org_002droam-directory_003f][Org-roam manual: 18.1 How do I have more than one Org-roam directory?]]
 
 You can create a new and isolated org-roam directory by:
 
