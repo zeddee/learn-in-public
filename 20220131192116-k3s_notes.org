@@ -1,0 +1,257 @@
+:PROPERTIES:
+:ID:       273dab65-ede5-4231-a074-8101ede10776
+:END:
+#+title: Kubernetes/k3s notes
+#+filetags: k3s k8s kubernetes devops
+
+* Kubernetes/K3s notes
+
+Working through
+[[https://www.udemy.com/course/kubernetes-microservices/]]
+
+** Run =kubectl= on any host
+   :PROPERTIES:
+   :CUSTOM_ID: run-kubectl-on-any-host
+   :END:
+You can run =kubectl= from any host to interact with your control
+plane/k3s server.
+
+#+BEGIN_QUOTE
+  ✅ See k3s documentation on
+  [[https://rancher.com/docs/k3s/latest/en/cluster-access/][Cluster
+  Access]].
+#+END_QUOTE
+
+To set up your current host to run =kubectl=:
+
+1. Copy =/etc/rancher/k3s/k3s.yaml= from your k3s host into
+   =~/k3s/k3s.yaml= on your current host:
+
+   #+BEGIN_SRC sh
+     # E.g.
+     scp user@k3s_server:/etc/rancher/k3s/k3s.yaml ~/k3s/k3s.yaml
+   #+END_SRC
+
+2. Set the =KUBECONFIG= environment variable to point to
+   =~/k3s/k3s.yaml=:
+
+   #+BEGIN_SRC sh
+     export KUBECONFIG=~/k3s/k3s.yml
+   #+END_SRC
+
+3. Run =kubectl get nodes=. You should be able to see all running nodes
+   in your k3s/k8s cluster:
+
+   #+BEGIN_SRC sh
+     kubectl get node
+     > NAME     STATUS   ROLES                  AGE     VERSION
+     > ubuntu   Ready    control-plane,master   5d15h   v1.21.7+k3s1
+   #+END_SRC
+
+4. You can inspect the current context your =kubectl= command is
+   operating in:
+
+   #+BEGIN_EXAMPLE
+     kubectl config current-context
+     >default
+
+     kubectl config get-contexts
+     CURRENT   NAME      CLUSTER   AUTHINFO   NAMESPACE
+     *         default   default   default
+   #+END_EXAMPLE
+
+You can have multiple `KUBECONFIG files:
+
+#+BEGIN_SRC sh
+  export KUBECONFIG=file1:file2
+#+END_SRC
+
+By default, =k3s.yml= sets a =default= context. You can change this by
+editing it to change the context name:
+
+#+BEGIN_SRC sh
+  sed 's/default/new_context/g' k3s.yml > new-config.yml
+#+END_SRC
+
+Set the default =KUBECONFIG= for your shell by moving =k3s.yml= to
+=~/.kube/config=.
+
+=KUBECONFIG= documentation:
+[[https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/]]
+
+** External network access
+   :PROPERTIES:
+   :CUSTOM_ID: external-network-access
+   :END:
+Services and pods that reside in clusters without a load balancer can
+still be externally accessed.
+
+This works with services set with =type= values:
+
+- =ClusterIP=
+- =NodeIP=
+
+To bind a pod or service to the local network interface and a specific
+port, run the =kubectl port-forward ...= command.
+
+#+BEGIN_QUOTE
+  ✅ *TIP:* When you run =kubectl port-forward= on a host, you are
+  forwarding traffic from the target pod or service to the *host that
+  you are running =kubectl= on*.
+#+END_QUOTE
+
+To make a service externally accessible:
+
+#+BEGIN_SRC sh
+  kubectl port-forward --address 0.0.0.0 service/fleetman-webapp 8888:http
+#+END_SRC
+
+For some reason, you must specify a named port when you forward ports
+from a service. This means that your service manifest should have a
+section that looks like this:
+
+#+BEGIN_EXAMPLE
+    ports:
+      - name: http
+        port: 80
+        targetPort: 80
+        protocol: TCP
+#+END_EXAMPLE
+
+#+BEGIN_QUOTE
+  ⚠️ When you update and re-=apply= or =replace= a service manifest
+  where the =selector= field has changed, you *must* re-run
+  =kubectl port-forward= in order to forward traffic from the newly
+  selected pods.
+#+END_QUOTE
+
+** Building containers with kaniko
+   :PROPERTIES:
+   :CUSTOM_ID: building-containers-with-kaniko
+   :END:
+Attempting to run =richardchesterwood/k8s-fleetman-queue:release2= in a
+pod produces this error:
+
+#+BEGIN_EXAMPLE
+  standard_init_linux.go:228: exec user process caused: exec format error
+#+END_EXAMPLE
+
+I'm thinking that it could be caused by not using the dockershim. The
+correct thing to do would be to install docker and continue working
+through the course, but my brain told me to attempt to re-build the
+containers.
+
+I considered using
+[[https://github.com/genuinetools/img][genuinetools/img]], but decided
+to try using [[https://github.com/GoogleContainerTools/kaniko/][kaniko]]
+first
+
+*** Set and describe secrets
+    :PROPERTIES:
+    :CUSTOM_ID: set-and-describe-secrets
+    :END:
+Set a secret to use with the docker registry (rewriting here because
+=-h= is a bit verbose and formatting makes it difficult ot read):
+
+#+BEGIN_SRC sh
+  kubectl create secret docker-registry <secret_name> \
+     --docker-server=https://index.docker.io/v1/ \
+     --docker-email=<docker_email> \
+     --docker-username=<docker_username> \
+     --docker-password=<docker_password>
+#+END_SRC
+
+You can =get= and =describe= secrets you've set:
+
+#+BEGIN_SRC sh
+  kubectl get secrets
+  kubectl describe secret/<secret_name>
+#+END_SRC
+
+** Helpful snippets
+   :PROPERTIES:
+   :CUSTOM_ID: helpful-snippets
+   :END:
+Short names for resources:
+
+#+BEGIN_QUOTE
+  ✅ Get all shortnames by running =kubectl api-resources=
+#+END_QUOTE
+
+#+BEGIN_EXAMPLE
+  po       # pods
+  svc      # services
+  rs       # replica sets
+  deploy   # deployment
+#+END_EXAMPLE
+
+Delete all pods:
+
+#+BEGIN_EXAMPLE
+  kubectl delete po --all
+#+END_EXAMPLE
+
+Iterate all resources with arbitrary command:
+
+#+BEGIN_SRC sh
+  for i in $(kubectl get all -o=name); do echo $i; done
+#+END_SRC
+
+** Kubernetes cheatsheet
+   :PROPERTIES:
+   :CUSTOM_ID: kubernetes-cheatsheet
+   :END:
+[[https://kubernetes.io/docs/reference/kubectl/cheatsheet/]]
+
+** Container nitty-gritty
+   :PROPERTIES:
+   :CUSTOM_ID: container-nitty-gritty
+   :END:
+
+#+BEGIN_QUOTE
+  ✅ From
+  [[https://learning.oreilly.com/scenarios/kubernetes-containers-decomposing/9781492090137/]]
+#+END_QUOTE
+
+OCI container images have a structure like this:
+
+#+BEGIN_EXAMPLE
+  redis-6.2.6
+  ├── 019f36f9d0fcf2f1127f8e60e7808f9e10aad6e3f260362249f3fdeeb625db8c
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
+  ├── 3225e1e39c0a05ff117d5408ffd5fb6f0d059f579b285553cd7a652f6001e263
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
+  ├── 3518ba39756f884ef90cdad56aaf9bc84610436a7240b36ad3c5af71d7891396
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
+  ├── 43866181413986ade62e6efce021dca287cd13f392d8b8dd631a93371bb026be
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
+  ├── 54b4b5240aaa9df44cd7bbfa78bbd9c6f7071ffe6f0a414022ec3d96f088bdb4
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
+  ├── 5d44f444e409727b3ebaaceed9372619170545063ad6779705631faddea2f92a.json
+  ├── a4cb647bca106826e7432a1690697273fc74a032b40241a9165fce157ccea2ed
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
+  ├── manifest.json
+  └── repositories
+
+  6 directories, 21 files
+#+END_EXAMPLE
+
+*** Create an empty tar file
+    :PROPERTIES:
+    :CUSTOM_ID: create-an-empty-tar-file
+    :END:
+#+BEGIN_SRC sh
+  tar cv --files-from /dev/null > empty.tar
+#+END_SRC
