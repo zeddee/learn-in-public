@@ -218,30 +218,30 @@ OCI container images have a structure like this:
 #+BEGIN_EXAMPLE
   redis-6.2.6
   ├── 019f36f9d0fcf2f1127f8e60e7808f9e10aad6e3f260362249f3fdeeb625db8c
-  │   ├── VERSION
-  │   ├── json
-  │   └── layer.tar
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
   ├── 3225e1e39c0a05ff117d5408ffd5fb6f0d059f579b285553cd7a652f6001e263
-  │   ├── VERSION
-  │   ├── json
-  │   └── layer.tar
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
   ├── 3518ba39756f884ef90cdad56aaf9bc84610436a7240b36ad3c5af71d7891396
-  │   ├── VERSION
-  │   ├── json
-  │   └── layer.tar
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
   ├── 43866181413986ade62e6efce021dca287cd13f392d8b8dd631a93371bb026be
-  │   ├── VERSION
-  │   ├── json
-  │   └── layer.tar
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
   ├── 54b4b5240aaa9df44cd7bbfa78bbd9c6f7071ffe6f0a414022ec3d96f088bdb4
-  │   ├── VERSION
-  │   ├── json
-  │   └── layer.tar
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
   ├── 5d44f444e409727b3ebaaceed9372619170545063ad6779705631faddea2f92a.json
   ├── a4cb647bca106826e7432a1690697273fc74a032b40241a9165fce157ccea2ed
-  │   ├── VERSION
-  │   ├── json
-  │   └── layer.tar
+  │   ├── VERSION
+  │   ├── json
+  │   └── layer.tar
   ├── manifest.json
   └── repositories
 
