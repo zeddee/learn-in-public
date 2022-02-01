@@ -144,7 +144,54 @@ containers.
 I considered using
 [[https://github.com/genuinetools/img][genuinetools/img]], but decided
 to try using [[https://github.com/GoogleContainerTools/kaniko/][kaniko]]
-first
+first.
+
+The [[https://github.com/GoogleContainerTools/kaniko/blob/a36d59046c15fbde62524c66d2ca29ffd4e228ae/docs/tutorial.md][kaniko tutorial]]
+walks us through a quick and dirty way
+of building containers with kaniko i.e. set up and run
+single-use pods that build and publish containers, and then
+need to be manually cleaned up:
+
+1. Prep your build context
+1. Set and describe secrets
+1. Run the pod
+1. Manual cleanup
+
+*** Prep your build context
+
+Your build context should contain the Dockerfile and the
+assets you want to build into your container.
+
+In our case, we want to build a modified version of the
+=Dockerfile= at
+[[https://github.com/DickChesterwood/k8s-fleetman/tree/5ed9fdd57bac40218372981728d2d4c87ac2a023/k8s-fleetman-queue][github.com/DickChesterwood/k8s-fleetman/k8s-fleetman-queue]]
+where we upgrade the JAVA image used from
+=openjdk:8u131-jre= to =openjdk:8u312-jre=.
+
+#+BEGIN_SRC dockerfile
+FROM openjdk:8u312-jre
+RUN wget -O activemq.tar.gz http://archive.apache.org/dist/activemq/5.14.3/apache-activemq-5.14.3-bin.tar.gz
+RUN tar -xzf activemq.tar.gz
+CMD ["apache-activemq-5.14.3/bin/activemq", "console"]
+#+END_SRC
+
+The [[https://github.com/GoogleContainerTools/kaniko/tree/a36d59046c15fbde62524c66d2ca29ffd4e228ae/examples][example YAML manifests]] assume that you're using the
+[[https://kubernetes.io/docs/concepts/storage/storage-classes/#local][local-storage]] storage class, so your build context *must* be
+available on the *node host* when the pod runs.
+
+I placed my build context at
+=/home/ubuntu/src/k8s-fleetman/k8s-fleetman-queue= on node
+host, and modified ~spec.hostPath~ in =volume.yaml= to look
+like this:
+
+#+BEGIN_SRC yaml
+spec:
+  # ...
+  storageClassName: local-storage
+  hostPath:
+    path: /home/ubuntu/src/k8s-fleetman/k8s-fleetman-queue
+    type: Directory
+#+END_SRC
 
 *** Set and describe secrets
     :PROPERTIES:
@@ -168,6 +215,57 @@ You can =get= and =describe= secrets you've set:
   kubectl describe secret/<secret_name>
 #+END_SRC
 
+*** Run the pod
+
+1. Create the volume and persistent volume claim:
+   #+BEGIN_SRC bash
+   kubectl create -f volume.yaml
+   kubectl create -f volume-claim.yaml
+   #+END_SRC
+2. Create the pod:
+   #+BEGIN_SRC bash
+   kubectl create -f pod.yaml
+   #+END_SRC
+*** Manual cleanup
+#+BEGIN_SRC bash
+kubectl delete pod kaniko
+#+END_SRC
+** Create an "inspector" service to debug mounts
+Running a =local-storage= volume claim may not give you
+consistent results. To deal with this, we can create a dummy
+"inspector" container that allows us to connect to and
+inspect a given mounted volume.
+
+Example =pod.yaml= file that creates an "inspector"
+container:
+
+#+BEGIN_SRC yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: inspector
+spec:
+  containers:
+  - image: alpine:latest
+    name: inspector
+    command: ["tail"]
+    args: ["-f", "/dev/null"]
+    volumeMounts:
+      - mountPath: /workspace
+        name: dockerfile-storage
+
+  volumes:
+    - name: dockerfile-storage
+      persistentVolumeClaim:
+        claimName: dockerfile-claim
+#+END_SRC
+
+The container's entrypoint is set to run a ~tail~ command
+that does nothing, so it doesn't
+immediately stop itself.
+
+This allows us to run ~kubectl exec -ti sh~ to attach to the
+"inspector" container and inspect the volume claim.
 ** Helpful snippets
    :PROPERTIES:
    :CUSTOM_ID: helpful-snippets
