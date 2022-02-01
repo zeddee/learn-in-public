@@ -81,3 +81,20 @@ You can create a new and isolated org-roam directory by:
    org-roam, and when emacs prompts you again, type ~!~
    to make your .dir-locals.el settings permanent for
    that directory.
+
+* Write and preview graphviz diagrams in orgmode files
+
+
+From: https://joy.pm/post/2017-09-17-a_graphviz_primer/
+
+You can write a graphviz diagram in code blocks and have
+them render when you evaluate them with ~C-c C-c~:
+
+#+BEGIN_EXAMPLE orgmode
+#+BEGIN_SRC dot :file my_output_file.png :cmdline -Kdot -Tpng
+digraph G {
+  my_start -> one_branch;
+  my_start -> another_branch;
+}
+#+END_SRC
+#+END_EXAMPLE
