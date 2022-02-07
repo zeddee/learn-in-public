@@ -98,3 +98,33 @@ digraph G {
 }
 #+END_SRC
 #+END_EXAMPLE
+
+
+* Run Python code in org mode
+
+You can run Python code contained within source blocks in
+org files[fn:1].
+
+First, make sure that ~org-babel~ is configured to read and
+run Python code. I added the following to my
+~.doom.d/config.el~ file:
+
+#+BEGIN_SRC elisp
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((python . t)))
+#+END_SRC
+
+This allows you to invoke source blocks like the one below
+with ~C-c C-c~:
+
+#+BEGIN_SRC python :results output :exports both
+out = [i for i in range(1,10)]
+print(out)
+#+END_SRC
+
+#+RESULTS:
+: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
+[fn:1] https://orgmode.org/worg/org-contrib/babel/languages/ob-doc-python.html
